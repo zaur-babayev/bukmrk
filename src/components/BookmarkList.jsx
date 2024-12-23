@@ -137,7 +137,7 @@ function BookmarkList({ bookmarks, onDelete, onBulkAction, isMovingBookmarks, se
                       top={4}
                       right={4}
                       icon={<DeleteIcon />}
-                      colorScheme="red"
+                      color="black"
                       variant="ghost"
                       size="sm"
                       onClick={() => onDelete(bookmark.id)}
