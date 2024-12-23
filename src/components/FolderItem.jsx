@@ -101,24 +101,26 @@ function FolderItem({
               />
             </HStack>
           ) : (
-            <Button
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              leftIcon={<FiFolder />}
-              variant={isSelected ? "solid" : "ghost"}
-              justifyContent="flex-start"
-              onClick={() => onSelect(folder.id)}
-              w="full"
-              h="36px"
-              fontWeight="normal"
-              bg={snapshot.isDraggingOver ? "blue.50" : undefined}
-              borderWidth={snapshot.isDraggingOver ? "2px" : "0px"}
-              borderColor={snapshot.isDraggingOver ? "blue.500" : undefined}
-              transition="all 0.2s"
-              position="relative"
-            >
-              <span>{folder.name}</span>
-              {provided.placeholder}
+            <HStack w="full" spacing={0} position="relative">
+              <Button
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                leftIcon={<FiFolder />}
+                variant={isSelected ? "solid" : "ghost"}
+                justifyContent="flex-start"
+                onClick={() => onSelect(folder.id)}
+                w="full"
+                h="36px"
+                fontWeight="normal"
+                bg={snapshot.isDraggingOver ? "blue.50" : undefined}
+                borderWidth={snapshot.isDraggingOver ? "2px" : "0px"}
+                borderColor={snapshot.isDraggingOver ? "blue.500" : undefined}
+                transition="all 0.2s"
+              >
+                <span>{folder.name}</span>
+                {provided.placeholder}
+              </Button>
+              
               <Menu 
                 isOpen={isOpen} 
                 onClose={handleCloseMenu}
@@ -129,16 +131,17 @@ function FolderItem({
                   variant="ghost"
                   size="xs"
                   onClick={(e) => {
-                    e.stopPropagation()
+                    e.stopPropagation();
                     if (closeTimeoutRef.current) {
-                      clearTimeout(closeTimeoutRef.current)
+                      clearTimeout(closeTimeoutRef.current);
                     }
-                    setMenuPosition(null)
-                    onOpen()
+                    setMenuPosition(null);
+                    onOpen();
                   }}
                   display={{ base: 'flex', md: window.matchMedia('(pointer: fine)').matches ? 'none' : 'flex' }}
                   position="absolute"
                   right={2}
+                  zIndex={1}
                 />
                 <Portal>
                   <MenuList
@@ -156,7 +159,7 @@ function FolderItem({
                   </MenuList>
                 </Portal>
               </Menu>
-            </Button>
+            </HStack>
           )}
         </div>
       )}
