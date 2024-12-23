@@ -17,13 +17,27 @@ import {
 import { extendTheme } from '@chakra-ui/react'
 import { DragDropContext } from '@hello-pangea/dnd'
 import FolderList from './components/FolderList'
-import { HStack, Box } from '@chakra-ui/react'
+import { HStack, Box, VStack } from '@chakra-ui/react'
 import { BrowserRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom'
 
 const theme = extendTheme({
   fonts: {
     heading: "'Space Grotesk', sans-serif",
     body: "'Space Grotesk', sans-serif",
+  },
+  colors: {
+    monochrome: {
+      50: '#FFFFFF',
+      100: '#FAFAFA',
+      200: '#EAEAEA',
+      300: '#999999',
+      400: '#888888',
+      500: '#666666',
+      600: '#444444',
+      700: '#333333',
+      800: '#222222',
+      900: '#111111'
+    }
   },
   config: {
     initialColorMode: 'light',
@@ -32,8 +46,8 @@ const theme = extendTheme({
   styles: {
     global: {
       body: {
-        bg: 'gray.50',
-        color: 'gray.800'
+        bg: 'monochrome.100',
+        color: 'monochrome.900'
       }
     }
   },
@@ -42,16 +56,45 @@ const theme = extendTheme({
       defaultProps: {
         size: 'sm',
       },
+      variants: {
+        solid: {
+          bg: 'monochrome.900',
+          color: 'white',
+          _hover: {
+            bg: 'monochrome.700',
+          }
+        },
+        ghost: {
+          _hover: {
+            bg: 'monochrome.100',
+          }
+        }
+      }
     },
     Input: {
       defaultProps: {
         size: 'sm',
       },
+      variants: {
+        outline: {
+          field: {
+            borderColor: 'monochrome.200',
+            _hover: {
+              borderColor: 'monochrome.300',
+            },
+            _focus: {
+              borderColor: 'monochrome.900',
+              boxShadow: '0 0 0 1px var(--chakra-colors-monochrome-900)',
+            }
+          }
+        }
+      }
     },
     FormLabel: {
       baseStyle: {
         fontSize: 'sm',
         fontWeight: 'medium',
+        color: 'monochrome.700',
       },
     },
     Badge: {
@@ -60,6 +103,12 @@ const theme = extendTheme({
         py: 1,
         borderRadius: 'full',
       },
+      variants: {
+        solid: {
+          bg: 'monochrome.900',
+          color: 'white',
+        }
+      }
     },
   },
 })
@@ -95,29 +144,31 @@ function BookmarkManager({ bookmarks, folders, selectedFolderId, setSelectedFold
   }
 
   return (
-    <HStack align="start" spacing={8}>
-      <Box w="250px">
-        <FolderList
-          folders={folders}
-          onCreateFolder={props.createFolder}
-          onSelectFolder={handleFolderSelect}
-          selectedFolderId={selectedFolderId}
-          isMovingBookmarks={props.isMovingBookmarks}
-          setIsMovingBookmarks={props.setIsMovingBookmarks}
-        />
-      </Box>
-      <Box flex={1}>
-        <BookmarkForm onSubmit={props.addBookmark} />
-        <BookmarkList 
-          bookmarks={props.filteredBookmarks}
-          onDelete={props.deleteBookmark}
-          onBulkAction={props.handleBulkAction}
-          isMovingBookmarks={props.isMovingBookmarks}
-          setIsMovingBookmarks={props.setIsMovingBookmarks}
-          folders={folders}
-        />
-      </Box>
-    </HStack>
+    <VStack align="stretch" spacing={8}>
+      <BookmarkForm onSubmit={props.addBookmark} />
+      <HStack align="start" spacing={8}>
+        <Box w="250px">
+          <FolderList
+            folders={folders}
+            onCreateFolder={props.createFolder}
+            onSelectFolder={handleFolderSelect}
+            selectedFolderId={selectedFolderId}
+            isMovingBookmarks={props.isMovingBookmarks}
+            setIsMovingBookmarks={props.setIsMovingBookmarks}
+          />
+        </Box>
+        <Box flex={1}>
+          <BookmarkList 
+            bookmarks={props.filteredBookmarks}
+            onDelete={props.deleteBookmark}
+            onBulkAction={props.handleBulkAction}
+            isMovingBookmarks={props.isMovingBookmarks}
+            setIsMovingBookmarks={props.setIsMovingBookmarks}
+            folders={folders}
+          />
+        </Box>
+      </HStack>
+    </VStack>
   )
 }
 
@@ -173,7 +224,9 @@ function App() {
     try {
       await addDoc(collection(db, 'bookmarks'), {
         ...bookmark,
-        folderId: selectedFolderId,
+        folderId: selectedFolderId === 'root' || selectedFolderId === 'inbox' 
+          ? null 
+          : selectedFolderId,
         createdAt: new Date().toISOString(),
         order: bookmarks.length
       })
