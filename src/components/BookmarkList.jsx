@@ -15,7 +15,7 @@ function BookmarkList({ bookmarks, onDelete }) {
   return (
     <VStack spacing={4} align="stretch">
       <Heading size="lg" mb={4} color="blue.600">
-        Your Bookmarks
+        Your Bukmrks
       </Heading>
       {bookmarks.map((bookmark) => (
         <Box
