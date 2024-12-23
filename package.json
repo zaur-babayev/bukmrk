@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run pages:dev",
+    "pages:dev": "wrangler pages dev --compatibility-date=2024-01-01 -- npm run vite:dev",
+    "vite:dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

@@ -43,7 +43,15 @@ function FolderList({
 
   return (
     <VStack align="stretch" spacing={6}>
-      <Box bg="white" p={4} borderRadius="lg" shadow="sm">
+      <Box 
+        bg="white" 
+        p={4} 
+        borderRadius="lg" 
+        shadow="sm"
+        borderWidth="1px"
+        backdropFilter="blur(8px)"
+        transition="all 0.2s"
+      >
         <VStack align="stretch" spacing={2}>
           <Heading size="sm" mb={2}>Sections</Heading>
           
@@ -53,6 +61,7 @@ function FolderList({
             onClick={() => handleFolderClick('root')}
             w="full"
             h="36px"
+            fontWeight="normal"
           >
             All Bookmarks
           </Button>
@@ -68,6 +77,7 @@ function FolderList({
                 onClick={() => handleFolderClick('inbox')}
                 w="full"
                 h="36px"
+                fontWeight="normal"
                 bg={snapshot.isDraggingOver ? "blue.50" : undefined}
                 borderWidth={snapshot.isDraggingOver ? "2px" : "0px"}
                 borderColor={snapshot.isDraggingOver ? "blue.500" : undefined}
@@ -93,6 +103,7 @@ function FolderList({
                   onClick={() => handleFolderClick(folder.id)}
                   w="full"
                   h="36px"
+                  fontWeight="normal"
                   bg={snapshot.isDraggingOver ? "blue.50" : undefined}
                   borderWidth={snapshot.isDraggingOver ? "2px" : "0px"}
                   borderColor={snapshot.isDraggingOver ? "blue.500" : undefined}

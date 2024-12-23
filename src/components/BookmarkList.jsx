@@ -21,6 +21,14 @@ import { formatDistanceToNow } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { useState } from 'react'
 
+const truncateUrl = (url, maxLength = 50) => {
+  if (url.length <= maxLength) return url;
+  
+  const start = url.substring(0, maxLength / 2);
+  const end = url.substring(url.length - maxLength / 2);
+  return `${start}...${end}`;
+};
+
 function BookmarkList({ bookmarks, onDelete, onBulkAction, isMovingBookmarks, setIsMovingBookmarks, folders }) {
   const [selectedBookmarks, setSelectedBookmarks] = useState([])
 
@@ -103,12 +111,16 @@ function BookmarkList({ bookmarks, onDelete, onBulkAction, isMovingBookmarks, se
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
                     p={4}
-                    shadow={snapshot.isDragging ? "lg" : "sm"}
+                    shadow="sm"
                     borderWidth="1px"
                     borderRadius="lg"
                     bg="white"
                     opacity={snapshot.isDragging ? 0.6 : 1}
-                    _hover={{ shadow: 'md', borderColor: 'blue.200' }}
+                    _hover={{ 
+                      shadow: 'md',
+                      borderColor: 'blue.200',
+                      transform: 'translateY(-1px)',
+                    }}
                     transition="all 0.2s"
                     position="relative"
                   >
@@ -137,15 +149,20 @@ function BookmarkList({ bookmarks, onDelete, onBulkAction, isMovingBookmarks, se
                         {bookmark.title}
                       </Heading>
                       
-                      <Link 
-                        href={bookmark.url} 
-                        isExternal 
-                        color="gray.500"
-                        fontSize="sm"
-                        noOfLines={1}
-                      >
-                        {bookmark.url} <ExternalLinkIcon mx="2px" />
-                      </Link>
+                      <HStack spacing={2} width="100%">
+                        <Link 
+                          href={bookmark.url} 
+                          isExternal 
+                          color="gray.500"
+                          fontSize="sm"
+                          display="inline-flex"
+                          alignItems="center"
+                          title={bookmark.url}
+                        >
+                          {truncateUrl(bookmark.url)}
+                        </Link>
+                        <ExternalLinkIcon color="gray.500" boxSize="12px" flexShrink={0} />
+                      </HStack>
 
                       {bookmark.description && (
                         <Text fontSize="sm" color="gray.600" noOfLines={2}>

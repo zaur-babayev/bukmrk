@@ -10,10 +10,13 @@ import {
   Skeleton,
   Heading,
   HStack,
+  Spinner,
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 function BookmarkForm({ onSubmit }) {
+  const [url, setUrl] = useState('')
+  const [isExpanded, setIsExpanded] = useState(false)
   const [formData, setFormData] = useState({
     url: '',
     title: '',
@@ -32,117 +35,129 @@ function BookmarkForm({ onSubmit }) {
         },
         body: JSON.stringify({ url })
       })
-      const metadata = await response.json()
 
-      if (metadata.error) {
-        throw new Error(metadata.error)
+      if (!response.ok) {
+        throw new Error('Failed to fetch metadata')
       }
 
-      setFormData(prev => ({
-        ...prev,
-        title: metadata.title || prev.title,
-        description: metadata.description || prev.description,
-        image: metadata.image || prev.image
-      }))
+      const metadata = await response.json()
+      return metadata
     } catch (error) {
       console.error('Error fetching metadata:', error)
+      return {
+        title: new URL(url).hostname,
+        description: '',
+        image: ''
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleUrlChange = async (e) => {
-    const url = e.target.value
-    setFormData(prev => ({ ...prev, url }))
+  useEffect(() => {
+    const handlePaste = async (e) => {
+      const pastedText = e.clipboardData?.getData('text')
+      if (pastedText?.startsWith('http')) {
+        e.preventDefault()
+        setUrl(pastedText)
+        await handleUrlSubmit(pastedText)
+      }
+    }
+
+    document.addEventListener('paste', handlePaste)
+    return () => document.removeEventListener('paste', handlePaste)
+  }, [])
+
+  const handleUrlSubmit = async (submittedUrl) => {
+    if (!submittedUrl?.startsWith('http')) return
     
-    if (url && url.startsWith('http')) {
-      await fetchMetadata(url)
+    setIsLoading(true)
+    setFormData(prev => ({ ...prev, url: submittedUrl }))
+    
+    try {
+      const metadata = await fetchMetadata(submittedUrl)
+      setFormData(prev => ({
+        ...prev,
+        title: metadata.title || '',
+        description: metadata.description || '',
+        image: metadata.image || ''
+      }))
+      setIsExpanded(true)
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit(formData)
-    setFormData({ url: '', title: '', description: '', image: '' })
-  }
-
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    if (isExpanded) {
+      onSubmit(formData)
+      setFormData({ url: '', title: '', description: '', image: '' })
+      setUrl('')
+      setIsExpanded(false)
+    } else {
+      handleUrlSubmit(url)
+    }
   }
 
   return (
-    <Box 
-      as="form" 
-      onSubmit={handleSubmit} 
-      mb={8} 
-      bg="white" 
-      p={6} 
-      borderRadius="lg" 
-      shadow="sm"
-      borderWidth="1px"
-    >
+    <Box as="form" onSubmit={handleSubmit} w="100%">
       <VStack spacing={4} align="stretch">
-        <Heading size="md" mb={2}>🗂️ BukMrk</Heading>
-        <FormControl isRequired>
-          <FormLabel>URL</FormLabel>
-          <Input
-            name="url"
-            type="url"
-            value={formData.url}
-            onChange={handleUrlChange}
-            placeholder="https://example.com"
-            bg="white"
-          />
-        </FormControl>
-
-        <HStack spacing={4} align="start">
-          <FormControl isRequired flex={1}>
-            <FormLabel>Title</FormLabel>
-            <Skeleton isLoaded={!isLoading}>
-              <Input
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                placeholder="Enter bookmark title"
-                bg="white"
-              />
-            </Skeleton>
-          </FormControl>
-
-          <FormControl flex={1}>
-            <FormLabel>Description</FormLabel>
-            <Skeleton isLoaded={!isLoading}>
-              <Textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Enter bookmark description"
-                size="sm"
-                bg="white"
-                rows={1}
-              />
-            </Skeleton>
-          </FormControl>
-        </HStack>
-
-        {formData.image && (
-          <Image
-            src={formData.image}
-            alt="Site preview"
-            maxH="60px"
-            objectFit="contain"
-          />
-        )}
-
-        <Button 
-          type="submit" 
-          colorScheme="blue"
+        <Input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSubmit(e);
+            }
+          }}
+          placeholder="Paste URL or press ⌘+V anywhere"
+          size="lg"
           isLoading={isLoading}
-          alignSelf="flex-end"
-        >
-          Add Bookmark
-        </Button>
+          _placeholder={{ color: 'gray.400' }}
+          pr={isLoading ? 10 : 4}
+          icon={isLoading && <Spinner size="sm" />}
+        />
+
+        {isExpanded && (
+          <VStack spacing={3} align="stretch">
+            <Input
+              value={formData.title}
+              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="Title"
+              size="lg"
+              variant="unstyled"
+              fontSize="lg"
+              fontWeight="500"
+              px={1}
+              _placeholder={{ color: 'gray.400' }}
+              _hover={{ bg: 'gray.50' }}
+              _focus={{ 
+                bg: 'gray.50',
+                boxShadow: 'none'
+              }}
+            />
+            
+            <Input
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Add description (optional)"
+              size="lg"
+              variant="unstyled"
+              fontSize="md"
+              px={1}
+              _placeholder={{ color: 'gray.400' }}
+              _hover={{ bg: 'gray.50' }}
+              _focus={{ 
+                bg: 'gray.50',
+                boxShadow: 'none'
+              }}
+            />
+          </VStack>
+        )}
       </VStack>
     </Box>
   )
