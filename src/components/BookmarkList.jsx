@@ -20,7 +20,6 @@ import { FiArrowRight, FiFolder } from 'react-icons/fi'
 import { formatDistanceToNow } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { useState } from 'react'
-import { HapticFeedback } from '../utils/haptics'
 
 const truncateUrl = (url, maxLength = 50) => {
   if (url.length <= maxLength) return url;
@@ -35,7 +34,6 @@ function BookmarkList({ bookmarks, onDelete, onBulkAction, isMovingBookmarks, se
 
   const handleSelect = (bookmarkId) => {
     if (isMovingBookmarks) return // Disable selection while moving
-    HapticFeedback.light()
     setSelectedBookmarks(prev => 
       prev.includes(bookmarkId)
         ? prev.filter(id => id !== bookmarkId)
@@ -44,7 +42,6 @@ function BookmarkList({ bookmarks, onDelete, onBulkAction, isMovingBookmarks, se
   }
 
   const handleBulkAction = (action) => {
-    HapticFeedback.medium()
     onBulkAction(action, selectedBookmarks)
     if (action !== 'move') {
       setSelectedBookmarks([])
@@ -52,7 +49,6 @@ function BookmarkList({ bookmarks, onDelete, onBulkAction, isMovingBookmarks, se
   }
 
   const handleDelete = (bookmarkId) => {
-    HapticFeedback.warning()
     onDelete(bookmarkId)
   }
 

@@ -20,7 +20,6 @@ import FolderList from './components/FolderList'
 import { HStack, Box, VStack } from '@chakra-ui/react'
 import { BrowserRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom'
 import MobileDrawer from './components/MobileDrawer'
-import { HapticFeedback } from './utils/haptics'
 
 const theme = extendTheme({
   fonts: {
@@ -555,18 +554,6 @@ function App() {
     <ChakraProvider theme={theme}>
       <Box minH="100vh" bg="gray.50">
         <Container maxW="container.xl" py={8}>
-          {process.env.NODE_ENV === 'development' && (
-            <Button 
-              mb={4} 
-              onClick={() => {
-                HapticFeedback.success()
-                setTimeout(() => HapticFeedback.warning(), 500)
-                setTimeout(() => HapticFeedback.error(), 1000)
-              }}
-            >
-              Test Haptics
-            </Button>
-          )}
           <BrowserRouter>
             <DragDropContext onDragEnd={onDragEnd}>
               <Routes>

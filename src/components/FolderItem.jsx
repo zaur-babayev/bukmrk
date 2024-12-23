@@ -13,7 +13,6 @@ import {
 import { FiFolder, FiMoreVertical } from 'react-icons/fi'
 import { useState, useRef, useEffect } from 'react'
 import { Droppable } from '@hello-pangea/dnd'
-import { HapticFeedback } from '../utils/haptics'
 
 function FolderItem({ 
   folder, 
@@ -46,28 +45,24 @@ function FolderItem({
   }, [])
 
   const handleEdit = () => {
-    HapticFeedback.light()
     setIsEditing(true)
     onClose()
   }
 
   const handleSave = () => {
     if (editedName.trim() && editedName !== folder.name) {
-      HapticFeedback.success()
       onEdit(folder.id, editedName.trim())
     }
     setIsEditing(false)
   }
 
   const handleDelete = () => {
-    HapticFeedback.warning()
     onDelete(folder.id)
     onClose()
   }
 
   const handleFolderSelect = () => {
     if (!isEditing) {
-      HapticFeedback.light()
       onSelect(folder.id)
     }
   }
