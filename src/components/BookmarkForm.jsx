@@ -13,6 +13,8 @@ import {
   Heading,
   HStack,
   Spinner,
+  Text,
+  Kbd,
 } from '@chakra-ui/react'
 import { useState, useEffect, useRef } from 'react'
 
@@ -127,11 +129,17 @@ function BookmarkForm({ onSubmit }) {
               _placeholder={{ color: 'gray.400' }}
               pr="4.5rem"
             />
-            {isLoading && (
-              <InputRightElement width="4.5rem">
+            <InputRightElement width="auto" pr={2}>
+              {isLoading ? (
                 <Spinner size="sm" />
-              </InputRightElement>
-            )}
+              ) : (
+                <HStack spacing={1} opacity={0.5} fontSize="xs">
+                  <Text>press</Text>
+                  <Kbd fontSize="xs">enter</Kbd>
+                  <Text>to save</Text>
+                </HStack>
+              )}
+            </InputRightElement>
           </InputGroup>
         </FormControl>
 
