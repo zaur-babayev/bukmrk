@@ -15,8 +15,13 @@ import {
   Spinner,
   Text,
   Kbd,
+  useBreakpointValue,
+  IconButton,
+  Badge,
+  useToast,
 } from '@chakra-ui/react'
 import { useState, useEffect, useRef } from 'react'
+import { CheckIcon, LinkIcon } from '@chakra-ui/icons'
 
 function BookmarkForm({ onSubmit }) {
   const [url, setUrl] = useState('')
@@ -28,7 +33,10 @@ function BookmarkForm({ onSubmit }) {
     image: ''
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [clipboardUrl, setClipboardUrl] = useState(null)
   const urlInputRef = useRef(null)
+  const isMobile = useBreakpointValue({ base: true, md: false })
+  const toast = useToast()
 
   const fetchMetadata = async (url) => {
     try {
@@ -56,6 +64,50 @@ function BookmarkForm({ onSubmit }) {
       }
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const checkClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText()
+      if (text?.startsWith('http') && text !== url && text !== clipboardUrl) {
+        setClipboardUrl(text)
+      }
+    } catch (err) {
+      // Clipboard access denied or other error
+      console.log('Clipboard access error:', err)
+    }
+  }
+
+  useEffect(() => {
+    if (isMobile) {
+      // Check clipboard when component mounts
+      checkClipboard()
+      
+      // Check clipboard when app gains focus
+      const handleFocus = () => {
+        checkClipboard()
+      }
+      window.addEventListener('focus', handleFocus)
+      
+      // Check clipboard periodically (every 2 seconds)
+      const intervalId = setInterval(checkClipboard, 2000)
+      
+      return () => {
+        window.removeEventListener('focus', handleFocus)
+        clearInterval(intervalId)
+      }
+    }
+  }, [isMobile, url])
+
+  const handleClipboardSuggestion = async () => {
+    if (clipboardUrl) {
+      setUrl(clipboardUrl)
+      setClipboardUrl(null)
+      if (urlInputRef.current) {
+        urlInputRef.current.focus()
+      }
+      await handleUrlSubmit(clipboardUrl)
     }
   }
 
@@ -125,23 +177,55 @@ function BookmarkForm({ onSubmit }) {
                   handleSubmit(e);
                 }
               }}
-              placeholder="Paste URL or press ⌘+V anywhere"
+              placeholder={isMobile ? "Paste URL" : "Paste URL or press ⌘+V anywhere"}
               _placeholder={{ color: 'gray.400' }}
-              pr="4.5rem"
+              pr={isMobile ? "3.5rem" : "8rem"}
+              enterKeyHint="go"
             />
             <InputRightElement width="auto" pr={2}>
               {isLoading ? (
                 <Spinner size="sm" />
               ) : (
-                <HStack spacing={1} opacity={0.5} fontSize="xs">
-                  <Text>press</Text>
-                  <Kbd fontSize="xs">enter</Kbd>
-                  <Text>to save</Text>
-                </HStack>
+                <>
+                  {isMobile ? (
+                    <IconButton
+                      size="sm"
+                      icon={<CheckIcon />}
+                      variant="ghost"
+                      color="gray.500"
+                      aria-label="Save bookmark"
+                      onClick={handleSubmit}
+                      isDisabled={!url}
+                      _hover={{ color: 'gray.700' }}
+                    />
+                  ) : (
+                    <HStack spacing={1} opacity={0.5} fontSize="xs">
+                      <Text>press</Text>
+                      <Kbd fontSize="xs">enter</Kbd>
+                      <Text>to save</Text>
+                    </HStack>
+                  )}
+                </>
               )}
             </InputRightElement>
           </InputGroup>
         </FormControl>
+
+        {clipboardUrl && (
+          <Button
+            leftIcon={<LinkIcon />}
+            size="sm"
+            variant="ghost"
+            width="100%"
+            justifyContent="flex-start"
+            color="gray.500"
+            fontWeight="normal"
+            onClick={handleClipboardSuggestion}
+            _hover={{ bg: 'gray.50', color: 'gray.700' }}
+          >
+            Add from clipboard: {clipboardUrl.length > 40 ? clipboardUrl.substring(0, 40) + '...' : clipboardUrl}
+          </Button>
+        )}
 
         {isExpanded && (
           <VStack spacing={3} align="stretch">
@@ -170,6 +254,7 @@ function BookmarkForm({ onSubmit }) {
                 bg: 'gray.50',
                 boxShadow: 'none'
               }}
+              enterKeyHint="go"
             />
             
             <Input
@@ -196,6 +281,7 @@ function BookmarkForm({ onSubmit }) {
                 bg: 'gray.50',
                 boxShadow: 'none'
               }}
+              enterKeyHint="go"
             />
           </VStack>
         )}
@@ -204,4 +290,4 @@ function BookmarkForm({ onSubmit }) {
   )
 }
 
-export default BookmarkForm 
+export default BookmarkForm
