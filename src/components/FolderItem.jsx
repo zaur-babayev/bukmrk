@@ -9,7 +9,6 @@ import {
   Input,
   HStack,
   Portal,
-  Box,
 } from '@chakra-ui/react'
 import { FiFolder, FiMoreVertical } from 'react-icons/fi'
 import { useState, useRef, useEffect } from 'react'
@@ -25,12 +24,10 @@ function FolderItem({
 }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedName, setEditedName] = useState(folder.name)
+  const [menuPosition, setMenuPosition] = useState(null)
   const inputRef = useRef(null)
   const { isOpen, onOpen, onClose } = useDisclosure()
-  const menuRef = useRef()
-
-  // Context menu state
-  const [contextMenu, setContextMenu] = useState(null)
+  const closeTimeoutRef = useRef(null)
 
   useEffect(() => {
     if (isEditing) {
@@ -39,10 +36,17 @@ function FolderItem({
     }
   }, [isEditing])
 
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const handleEdit = () => {
     setIsEditing(true)
     onClose()
-    setContextMenu(null)
   }
 
   const handleSave = () => {
@@ -64,27 +68,21 @@ function FolderItem({
   const handleContextMenu = (e) => {
     if (window.matchMedia('(pointer: fine)').matches) {
       e.preventDefault()
-      setContextMenu({
-        x: e.clientX,
-        y: e.clientY,
-      })
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current)
+      }
+      setMenuPosition({ x: e.clientX, y: e.clientY })
+      onOpen()
     }
   }
 
-  // Close context menu on click outside
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setContextMenu(null)
-    }
-    
-    if (contextMenu) {
-      document.addEventListener('click', handleClickOutside)
-    }
-    
-    return () => {
-      document.removeEventListener('click', handleClickOutside)
-    }
-  }, [contextMenu])
+  const handleCloseMenu = () => {
+    onClose()
+    // Clear position after animation completes
+    closeTimeoutRef.current = setTimeout(() => {
+      setMenuPosition(null)
+    }, 200) // Match this with Chakra's animation duration
+  }
 
   return (
     <Droppable droppableId={`folder-${folder.id}`}>
@@ -121,7 +119,10 @@ function FolderItem({
             >
               <span>{folder.name}</span>
               {provided.placeholder}
-              <Menu isOpen={isOpen} onClose={onClose}>
+              <Menu 
+                isOpen={isOpen} 
+                onClose={handleCloseMenu}
+              >
                 <MenuButton
                   as={IconButton}
                   icon={<FiMoreVertical />}
@@ -129,6 +130,10 @@ function FolderItem({
                   size="xs"
                   onClick={(e) => {
                     e.stopPropagation()
+                    if (closeTimeoutRef.current) {
+                      clearTimeout(closeTimeoutRef.current)
+                    }
+                    setMenuPosition(null)
                     onOpen()
                   }}
                   display={{ base: 'flex', md: window.matchMedia('(pointer: fine)').matches ? 'none' : 'flex' }}
@@ -136,7 +141,14 @@ function FolderItem({
                   right={2}
                 />
                 <Portal>
-                  <MenuList zIndex={1002}>
+                  <MenuList
+                    zIndex={1002}
+                    {...(menuPosition ? {
+                      position: "fixed",
+                      left: `${menuPosition.x}px`,
+                      top: `${menuPosition.y}px`
+                    } : {})}
+                  >
                     <MenuItem onClick={handleEdit}>Rename</MenuItem>
                     <MenuItem onClick={() => onDelete(folder.id)} color="red.500">
                       Delete
@@ -145,49 +157,6 @@ function FolderItem({
                 </Portal>
               </Menu>
             </Button>
-          )}
-
-          {/* Context menu for desktop */}
-          {contextMenu && (
-            <Portal>
-              <Box
-                position="fixed"
-                left={contextMenu.x}
-                top={contextMenu.y}
-                bg="white"
-                boxShadow="md"
-                borderRadius="md"
-                borderWidth="1px"
-                zIndex={1000}
-              >
-                <Button
-                  variant="ghost"
-                  w="full"
-                  justifyContent="flex-start"
-                  px={4}
-                  py={2}
-                  onClick={handleEdit}
-                  fontWeight="normal"
-                >
-                  Rename
-                </Button>
-                <Button
-                  variant="ghost"
-                  w="full"
-                  justifyContent="flex-start"
-                  px={4}
-                  py={2}
-                  color="red.500"
-                  fontWeight="normal"
-                  onClick={() => {
-                    onDelete(folder.id)
-                    setContextMenu(null)
-                  }}
-                >
-                  Delete
-                </Button>
-              </Box>
-            </Portal>
           )}
         </div>
       )}
