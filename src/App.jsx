@@ -164,6 +164,8 @@ function BookmarkManager({ bookmarks, folders, selectedFolderId, setSelectedFold
           <FolderList
             folders={folders}
             onCreateFolder={props.createFolder}
+            onEditFolder={props.editFolder}
+            onDeleteFolder={props.deleteFolder}
             onSelectFolder={handleFolderSelect}
             selectedFolderId={selectedFolderId}
             isMovingBookmarks={props.isMovingBookmarks}
@@ -445,6 +447,65 @@ function App() {
     return bookmarks.filter(b => b.folderId === selectedFolderId)
   }, [bookmarks, selectedFolderId])
 
+  const editFolder = async (folderId, newName) => {
+    try {
+      const folderRef = doc(db, 'folders', folderId)
+      await updateDoc(folderRef, {
+        name: newName
+      })
+      toast({
+        title: "Folder renamed",
+        status: "success",
+        duration: 2000,
+      })
+    } catch (error) {
+      console.error('Error editing folder:', error)
+      toast({
+        title: "Error renaming folder",
+        status: "error",
+        duration: 3000,
+      })
+    }
+  }
+
+  const deleteFolder = async (folderId) => {
+    try {
+      // First update all bookmarks in this folder to have no folder (move to inbox)
+      const batch = writeBatch(db)
+      const bookmarksToUpdate = bookmarks.filter(b => b.folderId === folderId)
+      
+      bookmarksToUpdate.forEach(bookmark => {
+        const bookmarkRef = doc(db, 'bookmarks', bookmark.id)
+        batch.update(bookmarkRef, { folderId: null })
+      })
+      
+      // Delete the folder
+      const folderRef = doc(db, 'folders', folderId)
+      batch.delete(folderRef)
+      
+      await batch.commit()
+      
+      // Navigate to inbox if the deleted folder was selected
+      if (selectedFolderId === folderId) {
+        navigate('/inbox')
+      }
+      
+      toast({
+        title: "Folder deleted",
+        description: `${bookmarksToUpdate.length} bookmarks moved to inbox`,
+        status: "success",
+        duration: 3000,
+      })
+    } catch (error) {
+      console.error('Error deleting folder:', error)
+      toast({
+        title: "Error deleting folder",
+        status: "error",
+        duration: 3000,
+      })
+    }
+  }
+
   return (
     <ChakraProvider theme={theme}>
       <BrowserRouter>
@@ -465,6 +526,8 @@ function App() {
                   deleteBookmark={deleteBookmark}
                   handleBulkAction={handleBulkAction}
                   moveBookmarksToFolder={moveBookmarksToFolder}
+                  editFolder={editFolder}
+                  deleteFolder={deleteFolder}
                 />
               } />
               <Route path="/inbox" element={
@@ -481,6 +544,8 @@ function App() {
                   deleteBookmark={deleteBookmark}
                   handleBulkAction={handleBulkAction}
                   moveBookmarksToFolder={moveBookmarksToFolder}
+                  editFolder={editFolder}
+                  deleteFolder={deleteFolder}
                 />
               } />
               <Route path="/folder/:folderName" element={
@@ -497,6 +562,8 @@ function App() {
                   deleteBookmark={deleteBookmark}
                   handleBulkAction={handleBulkAction}
                   moveBookmarksToFolder={moveBookmarksToFolder}
+                  editFolder={editFolder}
+                  deleteFolder={deleteFolder}
                 />
               } />
             </Routes>

@@ -8,22 +8,27 @@ import {
   useDisclosure,
   Button,
   Divider,
+  useToast,
 } from '@chakra-ui/react'
 import { AddIcon } from '@chakra-ui/icons'
-import { FiFolder, FiInbox } from 'react-icons/fi'
+import { FiInbox } from 'react-icons/fi'
 import { useState } from 'react'
 import { Droppable } from '@hello-pangea/dnd'
+import FolderItem from './FolderItem'
 
 function FolderList({ 
   folders, 
   onCreateFolder, 
   onSelectFolder, 
-  selectedFolderId, 
+  selectedFolderId,
+  onEditFolder,
+  onDeleteFolder,
   isMovingBookmarks,
   setIsMovingBookmarks 
 }) {
   const [newFolderName, setNewFolderName] = useState('')
   const { isOpen, onToggle } = useDisclosure()
+  const toast = useToast()
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -34,11 +39,13 @@ function FolderList({
     }
   }
 
-  const handleFolderClick = (folderId) => {
-    onSelectFolder(folderId)
-    if (isMovingBookmarks) {
-      setIsMovingBookmarks(false)
-    }
+  const handleDeleteFolder = (folderId) => {
+    onDeleteFolder(folderId)
+    toast({
+      title: "Folder deleted",
+      status: "success",
+      duration: 2000,
+    })
   }
 
   return (
@@ -49,8 +56,6 @@ function FolderList({
         borderRadius="lg" 
         shadow="sm"
         borderWidth="1px"
-        backdropFilter="blur(8px)"
-        transition="all 0.2s"
       >
         <VStack align="stretch" spacing={2}>
           <Heading size="sm" mb={2}>Sections</Heading>
@@ -58,7 +63,7 @@ function FolderList({
           <Button
             variant={selectedFolderId === 'root' ? "solid" : "ghost"}
             justifyContent="flex-start"
-            onClick={() => handleFolderClick('root')}
+            onClick={() => onSelectFolder('root')}
             w="full"
             h="36px"
             fontWeight="normal"
@@ -74,7 +79,7 @@ function FolderList({
                 variant={selectedFolderId === 'inbox' ? "solid" : "ghost"}
                 justifyContent="flex-start"
                 leftIcon={<FiInbox />}
-                onClick={() => handleFolderClick('inbox')}
+                onClick={() => onSelectFolder('inbox')}
                 w="full"
                 h="36px"
                 fontWeight="normal"
@@ -92,28 +97,15 @@ function FolderList({
           <Divider my={2} />
 
           {folders.map((folder) => (
-            <Droppable key={folder.id} droppableId={`folder-${folder.id}`}>
-              {(provided, snapshot) => (
-                <Button
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  leftIcon={<FiFolder />}
-                  variant={selectedFolderId === folder.id ? "solid" : "ghost"}
-                  justifyContent="flex-start"
-                  onClick={() => handleFolderClick(folder.id)}
-                  w="full"
-                  h="36px"
-                  fontWeight="normal"
-                  bg={snapshot.isDraggingOver ? "blue.50" : undefined}
-                  borderWidth={snapshot.isDraggingOver ? "2px" : "0px"}
-                  borderColor={snapshot.isDraggingOver ? "blue.500" : undefined}
-                  transition="all 0.2s"
-                >
-                  {folder.name}
-                  {provided.placeholder}
-                </Button>
-              )}
-            </Droppable>
+            <FolderItem
+              key={folder.id}
+              folder={folder}
+              isSelected={selectedFolderId === folder.id}
+              onSelect={onSelectFolder}
+              onEdit={onEditFolder}
+              onDelete={handleDeleteFolder}
+              isMovingBookmarks={isMovingBookmarks}
+            />
           ))}
 
           {isOpen ? (

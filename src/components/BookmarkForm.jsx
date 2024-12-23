@@ -4,6 +4,8 @@ import {
   FormControl,
   FormLabel,
   Input,
+  InputGroup,
+  InputRightElement,
   Textarea,
   VStack,
   Image,
@@ -105,22 +107,26 @@ function BookmarkForm({ onSubmit }) {
   return (
     <Box as="form" onSubmit={handleSubmit} w="100%">
       <VStack spacing={4} align="stretch">
-        <Input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              handleSubmit(e);
-            }
-          }}
-          placeholder="Paste URL or press ⌘+V anywhere"
-          size="lg"
-          isLoading={isLoading}
-          _placeholder={{ color: 'gray.400' }}
-          pr={isLoading ? 10 : 4}
-          icon={isLoading && <Spinner size="sm" />}
-        />
+        <InputGroup size="lg">
+          <Input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+            placeholder="Paste URL or press ⌘+V anywhere"
+            _placeholder={{ color: 'gray.400' }}
+            pr="4.5rem"
+          />
+          {isLoading && (
+            <InputRightElement width="4.5rem">
+              <Spinner size="sm" />
+            </InputRightElement>
+          )}
+        </InputGroup>
 
         {isExpanded && (
           <VStack spacing={3} align="stretch">
