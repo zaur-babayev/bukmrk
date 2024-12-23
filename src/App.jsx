@@ -19,6 +19,7 @@ import { DragDropContext } from '@hello-pangea/dnd'
 import FolderList from './components/FolderList'
 import { HStack, Box, VStack } from '@chakra-ui/react'
 import { BrowserRouter, Routes, Route, useParams, useNavigate } from 'react-router-dom'
+import MobileDrawer from './components/MobileDrawer'
 
 const theme = extendTheme({
   fonts: {
@@ -145,9 +146,21 @@ function BookmarkManager({ bookmarks, folders, selectedFolderId, setSelectedFold
 
   return (
     <VStack align="stretch" spacing={8}>
-      <BookmarkForm onSubmit={props.addBookmark} />
+      <Box position="relative" width="100%">
+        <Box ml={{ base: '40px', md: 0 }}>
+          <BookmarkForm onSubmit={props.addBookmark} />
+        </Box>
+        <MobileDrawer
+          folders={folders}
+          onCreateFolder={props.createFolder}
+          onSelectFolder={handleFolderSelect}
+          selectedFolderId={selectedFolderId}
+          isMovingBookmarks={props.isMovingBookmarks}
+          setIsMovingBookmarks={props.setIsMovingBookmarks}
+        />
+      </Box>
       <HStack align="start" spacing={8}>
-        <Box w="250px">
+        <Box w="250px" display={{ base: 'none', md: 'block' }}>
           <FolderList
             folders={folders}
             onCreateFolder={props.createFolder}
