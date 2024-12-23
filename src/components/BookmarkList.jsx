@@ -189,8 +189,15 @@ function BookmarkList({ bookmarks, onDelete, onBulkAction, isMovingBookmarks, se
                         </WrapItem>
                         {bookmark.folderId && getFolderName(bookmark.folderId) && (
                           <WrapItem>
-                            <Badge colorScheme="blue" display="flex" alignItems="center" gap={1}>
-                              <FiFolder />
+                            <Badge 
+                              size="md" 
+                              variant="subtle" 
+                              colorScheme="gray"
+                              display="flex"
+                              alignItems="center"
+                              gap={1}
+                            >
+                              <FiFolder size="0.8em" />
                               {getFolderName(bookmark.folderId)}
                             </Badge>
                           </WrapItem>

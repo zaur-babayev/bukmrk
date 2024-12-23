@@ -155,7 +155,7 @@ function BookmarkManager({ bookmarks, folders, selectedFolderId, setSelectedFold
     <VStack align="stretch" spacing={8}>
       <Box position="relative" width="100%">
         <Box ml={{ base: '40px', md: 0 }}>
-          <BookmarkForm onSubmit={props.addBookmark} />
+          <BookmarkForm onSubmit={props.addBookmark} folders={folders} />
         </Box>
         <MobileDrawer
           folders={folders}
@@ -242,29 +242,94 @@ function App() {
     return () => unsubscribe()
   }, [])
 
+  const createFolder = async (name) => {
+    if (!name || typeof name !== 'string') return null;
+    
+    try {
+      const docRef = await addDoc(collection(db, 'folders'), {
+        name,
+        createdAt: new Date().toISOString()
+      })
+      
+      // Return the created folder with its ID
+      const newFolder = {
+        id: docRef.id,
+        name,
+        createdAt: new Date().toISOString()
+      }
+      
+      toast({
+        title: "Folder created",
+        status: "success",
+        duration: 2000,
+      })
+      
+      return newFolder
+    } catch (error) {
+      console.error('Error creating folder:', error)
+      toast({
+        title: "Error creating folder",
+        status: "error",
+        duration: 3000,
+      })
+      return null
+    }
+  }
+
   const addBookmark = async (bookmark) => {
     try {
-      await addDoc(collection(db, 'bookmarks'), {
-        ...bookmark,
-        folderId: selectedFolderId === 'root' || selectedFolderId === 'inbox' 
-          ? null 
-          : selectedFolderId,
-        createdAt: new Date().toISOString(),
-        order: bookmarks.length
-      })
+      let targetFolder = null
+      
+      // Handle hashtags if present
+      if (bookmark.hashtags && bookmark.hashtags.length > 0) {
+        console.log('Processing hashtags:', bookmark.hashtags) // Debug log
+        
+        // Process each hashtag in order
+        for (const folderName of bookmark.hashtags) {
+          console.log('Processing folder:', folderName) // Debug log
+          
+          const existingFolder = folders.find(f => f.name.toLowerCase() === folderName.toLowerCase())
+          if (existingFolder) {
+            console.log('Found existing folder:', existingFolder) // Debug log
+            targetFolder = existingFolder
+          } else {
+            console.log('Creating new folder:', folderName) // Debug log
+            const newFolder = await createFolder(folderName)
+            if (newFolder) {
+              console.log('Created new folder:', newFolder) // Debug log
+              targetFolder = newFolder
+            }
+          }
+        }
+      }
+      
+      // Add the bookmark
+      const bookmarkData = {
+        url: bookmark.url,
+        title: bookmark.title,
+        description: bookmark.description,
+        image: bookmark.image,
+        folderId: targetFolder ? targetFolder.id : 
+                 (selectedFolderId !== 'root' && selectedFolderId !== 'inbox' ? selectedFolderId : null),
+        createdAt: new Date().toISOString()
+      }
+      
+      console.log('Adding bookmark with data:', bookmarkData) // Debug log
+      
+      await addDoc(collection(db, 'bookmarks'), bookmarkData)
+
       toast({
         title: "Bookmark added",
         status: "success",
         duration: 2000,
-        isClosable: true,
       })
     } catch (error) {
       console.error('Error adding bookmark:', error)
       toast({
         title: "Error adding bookmark",
+        description: error.message,
         status: "error",
         duration: 3000,
-        isClosable: true,
       })
     }
   }
@@ -285,29 +350,6 @@ function App() {
         status: "error",
         duration: 3000,
         isClosable: true,
-      })
-    }
-  }
-
-  const createFolder = async (name) => {
-    if (!name || typeof name !== 'string') return;
-    
-    try {
-      await addDoc(collection(db, 'folders'), {
-        name,
-        createdAt: new Date().toISOString()
-      })
-      toast({
-        title: "Folder created",
-        status: "success",
-        duration: 2000,
-      })
-    } catch (error) {
-      console.error('Error creating folder:', error)
-      toast({
-        title: "Error creating folder",
-        status: "error",
-        duration: 3000,
       })
     }
   }
@@ -512,7 +554,7 @@ function App() {
     <ChakraProvider theme={theme}>
       <BrowserRouter>
         <DragDropContext onDragEnd={onDragEnd}>
-          <Container maxW="container.lg" py={8}>
+          <Container maxW="container.xl" py={8}>
             <Routes>
               <Route path="/" element={
                 <BookmarkManager
@@ -568,6 +610,13 @@ function App() {
                   deleteFolder={deleteFolder}
                 />
               } />
+              <Route path="*" element={
+                <Box>
+                  <VStack spacing={8} align="stretch">
+                    <BookmarkForm onSubmit={addBookmark} folders={folders} />
+                  </VStack>
+                </Box>
+              } />
             </Routes>
           </Container>
         </DragDropContext>
@@ -576,4 +625,4 @@ function App() {
   )
 }
 
-export default App 
+export default App
