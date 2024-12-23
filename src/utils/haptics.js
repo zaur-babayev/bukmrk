@@ -1,72 +1,24 @@
-// Haptic feedback patterns
+// Haptic feedback using the Web Vibration API
 const HapticPattern = {
-  SUCCESS: { type: 'success' },
-  WARNING: { type: 'warning' },
-  ERROR: { type: 'error' },
-  LIGHT: { type: 'light' },
-  MEDIUM: { type: 'medium' },
-  HEAVY: { type: 'heavy' },
+  SUCCESS: [50],
+  WARNING: [30, 50, 30],
+  ERROR: [100, 30, 100],
+  LIGHT: [15],
+  MEDIUM: [25],
+  HEAVY: [35],
 }
 
-// Check if the device supports haptic feedback
+// Check if the device supports vibration
 const supportsHaptics = () => {
-  return 'vibrate' in navigator || 'haptics' in window
+  return 'vibrate' in navigator
 }
 
 // Function to trigger haptic feedback
-export const triggerHaptic = (pattern = HapticPattern.LIGHT) => {
+export const triggerHaptic = (pattern) => {
   if (!supportsHaptics()) return
 
   try {
-    // Try to use the modern Haptics API first
-    if ('haptics' in window) {
-      switch (pattern.type) {
-        case 'success':
-          window.haptics.notificationSuccess()
-          break
-        case 'warning':
-          window.haptics.notificationWarning()
-          break
-        case 'error':
-          window.haptics.notificationError()
-          break
-        case 'light':
-          window.haptics.impactLight()
-          break
-        case 'medium':
-          window.haptics.impactMedium()
-          break
-        case 'heavy':
-          window.haptics.impactHeavy()
-          break
-        default:
-          window.haptics.impactLight()
-      }
-    } else if ('vibrate' in navigator) {
-      // Fallback to the Vibration API
-      switch (pattern.type) {
-        case 'success':
-          navigator.vibrate([50])
-          break
-        case 'warning':
-          navigator.vibrate([30, 50, 30])
-          break
-        case 'error':
-          navigator.vibrate([100, 30, 100])
-          break
-        case 'light':
-          navigator.vibrate(10)
-          break
-        case 'medium':
-          navigator.vibrate(20)
-          break
-        case 'heavy':
-          navigator.vibrate(30)
-          break
-        default:
-          navigator.vibrate(10)
-      }
-    }
+    navigator.vibrate(pattern)
   } catch (error) {
     console.debug('Haptic feedback failed:', error)
   }

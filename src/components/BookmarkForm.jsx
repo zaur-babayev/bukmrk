@@ -344,15 +344,11 @@ function BookmarkForm({ onSubmit, folders }) {
                 <Spinner size="sm" />
               ) : (
                 <HStack spacing={2}>
-                  {!isLoading && (
+                  {!isLoading && !isMobile && (
                     <>
                       <Text fontSize="sm" color="gray.500">use</Text>
                       <Kbd fontSize="xs">#name</Kbd>
                       <Text fontSize="sm" color="gray.500">to add or create folder</Text>
-                    </>
-                  )}
-                  {!isLoading && !isMobile && (
-                    <>
                       <Text fontSize="sm" color="gray.500">•</Text>
                       <Text fontSize="sm" color="gray.500">press</Text>
                       <Kbd fontSize="xs">enter</Kbd>
@@ -361,14 +357,11 @@ function BookmarkForm({ onSubmit, folders }) {
                   )}
                   {!isLoading && isMobile && (
                     <IconButton
-                      size="sm"
                       icon={<CheckIcon />}
-                      variant="ghost"
-                      color="gray.500"
-                      aria-label="Save bookmark"
+                      size="sm"
+                      colorScheme="blue"
                       onClick={handleSubmit}
-                      isDisabled={!url}
-                      _hover={{ color: 'gray.700' }}
+                      aria-label="Save bookmark"
                     />
                   )}
                 </HStack>
