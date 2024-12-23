@@ -144,6 +144,13 @@ function BookmarkManager({ bookmarks, folders, selectedFolderId, setSelectedFold
     }
   }
 
+  const handleDeleteFolder = async (folderId) => {
+    await props.deleteFolder(folderId)
+    if (selectedFolderId === folderId) {
+      navigate('/inbox')
+    }
+  }
+
   return (
     <VStack align="stretch" spacing={8}>
       <Box position="relative" width="100%">
@@ -165,7 +172,7 @@ function BookmarkManager({ bookmarks, folders, selectedFolderId, setSelectedFold
             folders={folders}
             onCreateFolder={props.createFolder}
             onEditFolder={props.editFolder}
-            onDeleteFolder={props.deleteFolder}
+            onDeleteFolder={handleDeleteFolder}
             onSelectFolder={handleFolderSelect}
             selectedFolderId={selectedFolderId}
             isMovingBookmarks={props.isMovingBookmarks}
@@ -484,11 +491,6 @@ function App() {
       batch.delete(folderRef)
       
       await batch.commit()
-      
-      // Navigate to inbox if the deleted folder was selected
-      if (selectedFolderId === folderId) {
-        navigate('/inbox')
-      }
       
       toast({
         title: "Folder deleted",
