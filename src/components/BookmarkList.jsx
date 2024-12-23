@@ -20,6 +20,7 @@ import { FiArrowRight, FiFolder } from 'react-icons/fi'
 import { formatDistanceToNow } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { useState } from 'react'
+import SwipeableBookmark from './SwipeableBookmark'
 
 const truncateUrl = (url, maxLength = 50) => {
   if (url.length <= maxLength) return url;
@@ -41,8 +42,8 @@ function BookmarkList({ bookmarks, onDelete, onBulkAction, isMovingBookmarks, se
     )
   }
 
-  const handleBulkAction = (action) => {
-    onBulkAction(action, selectedBookmarks)
+  const handleBulkAction = (action, bookmarkIds = selectedBookmarks) => {
+    onBulkAction(action, bookmarkIds)
     if (action !== 'move') {
       setSelectedBookmarks([])
     }
@@ -108,106 +109,107 @@ function BookmarkList({ bookmarks, onDelete, onBulkAction, isMovingBookmarks, se
             {...provided.droppableProps}
           >
             {bookmarks.map((bookmark, index) => (
-              <Draggable key={bookmark.id} draggableId={bookmark.id} index={index}>
+              <Draggable
+                key={bookmark.id}
+                draggableId={bookmark.id}
+                index={index}
+                isDragDisabled={isMovingBookmarks}
+              >
                 {(provided, snapshot) => (
                   <Box
                     ref={provided.innerRef}
                     {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    p={4}
-                    shadow="sm"
-                    borderWidth="1px"
-                    borderRadius="lg"
-                    bg="white"
-                    opacity={snapshot.isDragging ? 0.6 : 1}
-                    _hover={{ 
-                      shadow: 'md',
-                      borderColor: 'blue.200',
-                      transform: 'translateY(-1px)',
-                    }}
-                    transition="all 0.2s"
-                    position="relative"
+                    mb={4}
                   >
-                    <Checkbox 
-                      position="absolute"
-                      top={4}
-                      left={4}
-                      isChecked={selectedBookmarks.includes(bookmark.id)}
-                      onChange={() => handleSelect(bookmark.id)}
-                      colorScheme="blue"
-                    />
-                    <IconButton
-                      position="absolute"
-                      top={4}
-                      right={4}
-                      icon={<DeleteIcon />}
-                      color="black"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(bookmark.id)}
-                      aria-label="Delete bookmark"
-                    />
-                    
-                    <VStack align="stretch" spacing={2} pl={10} pr={10}>
-                      <Heading size="sm" noOfLines={1}>
-                        {bookmark.title}
-                      </Heading>
-                      
-                      <HStack spacing={2} width="100%">
-                        <Link 
-                          href={bookmark.url} 
-                          isExternal 
-                          color="gray.500"
-                          fontSize="sm"
-                          display="inline-flex"
-                          alignItems="center"
-                          title={bookmark.url}
-                        >
-                          {truncateUrl(bookmark.url)}
-                        </Link>
-                        <ExternalLinkIcon color="gray.500" boxSize="12px" flexShrink={0} />
-                      </HStack>
-
-                      {bookmark.description && (
-                        <Text fontSize="sm" color="gray.600" noOfLines={2}>
-                          {bookmark.description}
-                        </Text>
-                      )}
-
-                      <Wrap spacing={2} align="center">
-                        <WrapItem>
-                          <Tooltip label={new Date(bookmark.createdAt).toLocaleString()}>
-                            <Box 
-                              display="flex" 
-                              alignItems="center" 
-                              gap={1}
-                              color="gray.400" 
-                              fontSize="xs"
-                              _hover={{ color: "gray.600" }}
-                              transition="color 0.2s"
-                            >
-                              <TimeIcon boxSize={3} />
-                              {formatDistanceToNow(new Date(bookmark.createdAt), { addSuffix: true })}
-                            </Box>
-                          </Tooltip>
-                        </WrapItem>
-                        {bookmark.folderId && getFolderName(bookmark.folderId) && (
-                          <WrapItem>
-                            <Badge 
-                              size="md" 
-                              variant="subtle" 
-                              colorScheme="gray"
-                              display="flex"
+                    <SwipeableBookmark
+                      onDelete={() => handleDelete(bookmark.id)}
+                      onMove={() => handleBulkAction('move', [bookmark.id])}
+                      isMovingBookmarks={isMovingBookmarks}
+                      dragHandleProps={provided.dragHandleProps}
+                    >
+                      <Box
+                        position="relative"
+                        p={4}
+                        shadow="sm"
+                        borderWidth="1px"
+                        borderRadius="lg"
+                        bg="white"
+                        borderColor="gray.200"
+                        opacity={snapshot.isDragging ? 0.6 : 1}
+                        transition="all 0.2s"
+                      >
+                        <Checkbox 
+                          position="absolute"
+                          top={4}
+                          left={4}
+                          isChecked={selectedBookmarks.includes(bookmark.id)}
+                          onChange={() => handleSelect(bookmark.id)}
+                          colorScheme="blue"
+                        />
+                        
+                        <VStack align="stretch" spacing={2} pl={10} pr={10}>
+                          <Heading size="sm" noOfLines={1}>
+                            {bookmark.title}
+                          </Heading>
+                          
+                          <HStack spacing={2} width="100%">
+                            <Link 
+                              href={bookmark.url} 
+                              isExternal 
+                              color="gray.500"
+                              fontSize="sm"
+                              display="inline-flex"
                               alignItems="center"
-                              gap={1}
+                              title={bookmark.url}
+                              onClick={(e) => isMovingBookmarks && e.preventDefault()}
                             >
-                              <FiFolder size="0.8em" />
-                              {getFolderName(bookmark.folderId)}
-                            </Badge>
-                          </WrapItem>
-                        )}
-                      </Wrap>
-                    </VStack>
+                              {truncateUrl(bookmark.url)}
+                            </Link>
+                            <ExternalLinkIcon color="gray.500" boxSize="12px" flexShrink={0} />
+                          </HStack>
+
+                          {bookmark.description && (
+                            <Text fontSize="sm" color="gray.600" noOfLines={2}>
+                              {bookmark.description}
+                            </Text>
+                          )}
+
+                          <Wrap spacing={2} align="center">
+                            <WrapItem>
+                              <Tooltip label={new Date(bookmark.createdAt).toLocaleString()}>
+                                <Box 
+                                  display="flex" 
+                                  alignItems="center" 
+                                  gap={1}
+                                  color="gray.400" 
+                                  fontSize="xs"
+                                  _hover={{ color: "gray.600" }}
+                                  transition="color 0.2s"
+                                >
+                                  <TimeIcon boxSize={3} />
+                                  {formatDistanceToNow(new Date(bookmark.createdAt), { addSuffix: true })}
+                                </Box>
+                              </Tooltip>
+                            </WrapItem>
+                            {bookmark.folderId && getFolderName(bookmark.folderId) && (
+                              <WrapItem>
+                                <Badge 
+                                  size="md" 
+                                  variant="subtle" 
+                                  colorScheme="gray"
+                                  display="flex"
+                                  alignItems="center"
+                                  gap={1}
+                                >
+                                  <FiFolder size="0.8em" />
+                                  {getFolderName(bookmark.folderId)}
+                                </Badge>
+                              </WrapItem>
+                            )}
+                          </Wrap>
+                        </VStack>
+                      </Box>
+                    </SwipeableBookmark>
                   </Box>
                 )}
               </Draggable>
