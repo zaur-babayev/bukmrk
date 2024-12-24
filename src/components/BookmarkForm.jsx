@@ -153,6 +153,7 @@ function BookmarkForm({ onSubmit, folders }) {
   }
 
   const handlePaste = async (e) => {
+    e.preventDefault()
     const pastedText = e.clipboardData?.getData('text')
     if (pastedText?.startsWith('http')) {
       setUrl(pastedText)
