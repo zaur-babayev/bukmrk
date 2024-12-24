@@ -144,7 +144,11 @@ function BookmarkForm({ onSubmit, folders }) {
     if (pastedText?.startsWith('http')) {
       setUrl(pastedText)
       if (urlInputRef.current) {
-        urlInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        setTimeout(() => {
+          urlInputRef.current.focus()
+          urlInputRef.current.setSelectionRange(pastedText.length, pastedText.length)
+          urlInputRef.current.scrollLeft = urlInputRef.current.scrollWidth
+        }, 0)
       }
       await handleUrlSubmit(pastedText)
     }
