@@ -8,7 +8,6 @@ import {
   useDisclosure,
   Input,
   HStack,
-  Portal,
 } from '@chakra-ui/react'
 import { FiFolder, FiMoreVertical } from 'react-icons/fi'
 import { useState, useRef, useEffect } from 'react'
@@ -44,7 +43,8 @@ function FolderItem({
     }
   }, [])
 
-  const handleEdit = () => {
+  const handleEdit = (e) => {
+    e?.stopPropagation();
     setIsEditing(true)
     onClose()
   }
@@ -56,9 +56,12 @@ function FolderItem({
     setIsEditing(false)
   }
 
-  const handleDelete = () => {
-    onDelete(folder.id)
-    onClose()
+  const handleDelete = (e) => {
+    e?.stopPropagation();
+    onClose();
+    setTimeout(() => {
+      onDelete(folder.id);
+    }, 100);
   }
 
   const handleFolderSelect = () => {
@@ -154,21 +157,32 @@ function FolderItem({
                   right={2}
                   zIndex={1}
                 />
-                <Portal>
-                  <MenuList
-                    zIndex={1002}
-                    {...(menuPosition ? {
-                      position: "fixed",
-                      left: `${menuPosition.x}px`,
-                      top: `${menuPosition.y}px`
-                    } : {})}
+                <MenuList
+                  zIndex={1002}
+                  {...(menuPosition ? {
+                    position: "fixed",
+                    left: `${menuPosition.x}px`,
+                    top: `${menuPosition.y}px`
+                  } : {})}
+                >
+                  <MenuItem 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(e);
+                    }}
                   >
-                    <MenuItem onClick={handleEdit}>Rename</MenuItem>
-                    <MenuItem onClick={handleDelete} color="red.500">
-                      Delete
-                    </MenuItem>
-                  </MenuList>
-                </Portal>
+                    Rename
+                  </MenuItem>
+                  <MenuItem 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(e);
+                    }}
+                    color="red.500"
+                  >
+                    Delete
+                  </MenuItem>
+                </MenuList>
               </Menu>
             </HStack>
           )}

@@ -90,24 +90,10 @@ function BookmarkForm({ onSubmit, folders }) {
 
   useEffect(() => {
     if (isMobile) {
-      // Check clipboard when component mounts
-      checkClipboard()
-      
-      // Check clipboard when app gains focus
-      const handleFocus = () => {
-        checkClipboard()
-      }
-      window.addEventListener('focus', handleFocus)
-      
-      // Check clipboard periodically (every 2 seconds)
-      const intervalId = setInterval(checkClipboard, 2000)
-      
-      return () => {
-        window.removeEventListener('focus', handleFocus)
-        clearInterval(intervalId)
-      }
+      // Removed automatic clipboard check on component mount and focus
+      // If needed, add a button or explicit action to check clipboard
     }
-  }, [isMobile, url])
+  }, [isMobile])
 
   useEffect(() => {
     // Reset selected index when suggestions change
@@ -152,20 +138,37 @@ function BookmarkForm({ onSubmit, folders }) {
     }
   }
 
-  const handleSubmit = (e) => {
+  const handlePaste = async (e) => {
     e.preventDefault()
+    const pastedText = e.clipboardData?.getData('text')
+    if (pastedText?.startsWith('http')) {
+      setUrl(pastedText)
+      if (urlInputRef.current) {
+        setTimeout(() => {
+          urlInputRef.current.focus()
+          urlInputRef.current.setSelectionRange(pastedText.length, pastedText.length)
+          urlInputRef.current.scrollLeft = urlInputRef.current.scrollWidth
+        }, 0)
+      }
+      await handleUrlSubmit(pastedText)
+    }
+  }
+
+  const handleSubmit = (e) => {
+    if (e) {
+      e.preventDefault()
+    }
+    
+    // Only proceed if we have a URL
+    if (!url.trim()) return
+    
     if (isExpanded) {
-      // Extract hashtags from the current URL field even in expanded mode
       const { hashtags } = extractUrlAndTags(url)
-      
-      // Submit with current form data plus any hashtags from URL
       onSubmit({
         ...formData,
-        url: extractUrlAndTags(url).url, // Use clean URL without hashtags
+        url: extractUrlAndTags(url).url,
         hashtags
       })
-      
-      // Reset form
       setFormData({ url: '', title: '', description: '', image: '', folderId: null, hashtags: [] })
       setUrl('')
       setIsExpanded(false)
@@ -304,23 +307,6 @@ function BookmarkForm({ onSubmit, folders }) {
     }
   }
 
-  useEffect(() => {
-    const handlePaste = async (e) => {
-      const pastedText = e.clipboardData?.getData('text')
-      if (pastedText?.startsWith('http')) {
-        e.preventDefault()
-        setUrl(pastedText)
-        if (urlInputRef.current) {
-          urlInputRef.current.focus()
-        }
-        await handleUrlSubmit(pastedText)
-      }
-    }
-
-    document.addEventListener('paste', handlePaste)
-    return () => document.removeEventListener('paste', handlePaste)
-  }, [])
-
   return (
     <Box as="form" onSubmit={handleSubmit} w="100%" position="relative">
       <VStack spacing={4} align="stretch">
@@ -332,12 +318,20 @@ function BookmarkForm({ onSubmit, folders }) {
               onChange={(e) => {
                 setUrl(e.target.value)
                 handleHashtagInput(e.target.value, e.target)
+                // Scroll input into view when typing
+                e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
               }}
+              onPaste={handlePaste}
               onKeyDown={handleKeyDown}
               placeholder={isMobile ? "Paste URL" : "Paste URL or press ⌘V anywhere"}
               _placeholder={{ color: 'gray.400' }}
               pr={isMobile ? "3.5rem" : "16rem"}
               enterKeyHint="go"
+              sx={{
+                // Ensure text scrolls properly on mobile
+                scrollPaddingRight: '3.5rem',
+                textOverflow: 'ellipsis'
+              }}
             />
             <InputRightElement width="auto" pr={2}>
               {isLoading ? (
@@ -360,7 +354,7 @@ function BookmarkForm({ onSubmit, folders }) {
                       icon={<CheckIcon />}
                       size="sm"
                       colorScheme="blue"
-                      onClick={handleSubmit}
+                      onClick={() => handleSubmit()}
                       aria-label="Save bookmark"
                     />
                   )}

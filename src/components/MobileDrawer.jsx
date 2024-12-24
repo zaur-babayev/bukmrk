@@ -6,7 +6,16 @@ import { HamburgerIcon } from '@chakra-ui/icons'
 import FolderList from './FolderList'
 import { useState, useEffect, useRef } from 'react'
 
-function MobileDrawer({ folders, onCreateFolder, onSelectFolder, selectedFolderId, isMovingBookmarks, setIsMovingBookmarks }) {
+function MobileDrawer({ 
+  folders, 
+  onCreateFolder, 
+  onSelectFolder, 
+  selectedFolderId, 
+  isMovingBookmarks, 
+  setIsMovingBookmarks,
+  onEditFolder,
+  onDeleteFolder 
+}) {
   const [isOpen, setIsOpen] = useState(false)
   const drawerRef = useRef(null)
   const buttonRef = useRef(null)
@@ -99,6 +108,8 @@ function MobileDrawer({ folders, onCreateFolder, onSelectFolder, selectedFolderI
               selectedFolderId={selectedFolderId}
               isMovingBookmarks={isMovingBookmarks}
               setIsMovingBookmarks={setIsMovingBookmarks}
+              onEditFolder={onEditFolder}
+              onDeleteFolder={onDeleteFolder}
             />
           </motion.div>
         )}
