@@ -90,24 +90,10 @@ function BookmarkForm({ onSubmit, folders }) {
 
   useEffect(() => {
     if (isMobile) {
-      // Check clipboard when component mounts
-      checkClipboard()
-      
-      // Check clipboard when app gains focus
-      const handleFocus = () => {
-        checkClipboard()
-      }
-      window.addEventListener('focus', handleFocus)
-      
-      // Check clipboard periodically (every 2 seconds)
-      const intervalId = setInterval(checkClipboard, 2000)
-      
-      return () => {
-        window.removeEventListener('focus', handleFocus)
-        clearInterval(intervalId)
-      }
+      // Removed automatic clipboard check on component mount and focus
+      // If needed, add a button or explicit action to check clipboard
     }
-  }, [isMobile, url])
+  }, [isMobile])
 
   useEffect(() => {
     // Reset selected index when suggestions change
@@ -160,6 +146,7 @@ function BookmarkForm({ onSubmit, folders }) {
       if (urlInputRef.current) {
         urlInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
       }
+      await handleUrlSubmit(pastedText)
     }
   }
 
