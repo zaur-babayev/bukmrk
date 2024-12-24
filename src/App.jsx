@@ -164,6 +164,8 @@ function BookmarkManager({ bookmarks, folders, selectedFolderId, setSelectedFold
           selectedFolderId={selectedFolderId}
           isMovingBookmarks={props.isMovingBookmarks}
           setIsMovingBookmarks={props.setIsMovingBookmarks}
+          onEditFolder={props.editFolder}
+          onDeleteFolder={handleDeleteFolder}
         />
       </Box>
       <HStack align="start" spacing={8}>

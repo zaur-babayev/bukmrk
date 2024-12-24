@@ -103,7 +103,7 @@ function BookmarkList({ bookmarks, onDelete, onBulkAction, isMovingBookmarks, se
       <Droppable droppableId="bookmarks">
         {(provided) => (
           <VStack 
-            spacing={4} 
+            spacing={2} 
             align="stretch"
             ref={provided.innerRef}
             {...provided.droppableProps}
@@ -119,7 +119,7 @@ function BookmarkList({ bookmarks, onDelete, onBulkAction, isMovingBookmarks, se
                   <Box
                     ref={provided.innerRef}
                     {...provided.draggableProps}
-                    mb={4}
+                    mb={2}
                   >
                     <SwipeableBookmark
                       onDelete={() => handleDelete(bookmark.id)}
