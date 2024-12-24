@@ -1,4 +1,4 @@
-import { ChakraProvider, Container, useToast } from '@chakra-ui/react'
+import { ChakraProvider, Container, useToast, Button } from '@chakra-ui/react'
 import BookmarkForm from './components/BookmarkForm'
 import BookmarkList from './components/BookmarkList'
 import { useState, useEffect, useMemo } from 'react'
@@ -144,11 +144,18 @@ function BookmarkManager({ bookmarks, folders, selectedFolderId, setSelectedFold
     }
   }
 
+  const handleDeleteFolder = async (folderId) => {
+    await props.deleteFolder(folderId)
+    if (selectedFolderId === folderId) {
+      navigate('/inbox')
+    }
+  }
+
   return (
     <VStack align="stretch" spacing={8}>
       <Box position="relative" width="100%">
         <Box ml={{ base: '40px', md: 0 }}>
-          <BookmarkForm onSubmit={props.addBookmark} />
+          <BookmarkForm onSubmit={props.addBookmark} folders={folders} />
         </Box>
         <MobileDrawer
           folders={folders}
@@ -165,7 +172,7 @@ function BookmarkManager({ bookmarks, folders, selectedFolderId, setSelectedFold
             folders={folders}
             onCreateFolder={props.createFolder}
             onEditFolder={props.editFolder}
-            onDeleteFolder={props.deleteFolder}
+            onDeleteFolder={handleDeleteFolder}
             onSelectFolder={handleFolderSelect}
             selectedFolderId={selectedFolderId}
             isMovingBookmarks={props.isMovingBookmarks}
@@ -235,29 +242,94 @@ function App() {
     return () => unsubscribe()
   }, [])
 
+  const createFolder = async (name) => {
+    if (!name || typeof name !== 'string') return null;
+    
+    try {
+      const docRef = await addDoc(collection(db, 'folders'), {
+        name,
+        createdAt: new Date().toISOString()
+      })
+      
+      // Return the created folder with its ID
+      const newFolder = {
+        id: docRef.id,
+        name,
+        createdAt: new Date().toISOString()
+      }
+      
+      toast({
+        title: "Folder created",
+        status: "success",
+        duration: 2000,
+      })
+      
+      return newFolder
+    } catch (error) {
+      console.error('Error creating folder:', error)
+      toast({
+        title: "Error creating folder",
+        status: "error",
+        duration: 3000,
+      })
+      return null
+    }
+  }
+
   const addBookmark = async (bookmark) => {
     try {
-      await addDoc(collection(db, 'bookmarks'), {
-        ...bookmark,
-        folderId: selectedFolderId === 'root' || selectedFolderId === 'inbox' 
-          ? null 
-          : selectedFolderId,
-        createdAt: new Date().toISOString(),
-        order: bookmarks.length
-      })
+      let targetFolder = null
+      
+      // Handle hashtags if present
+      if (bookmark.hashtags && bookmark.hashtags.length > 0) {
+        console.log('Processing hashtags:', bookmark.hashtags) // Debug log
+        
+        // Process each hashtag in order
+        for (const folderName of bookmark.hashtags) {
+          console.log('Processing folder:', folderName) // Debug log
+          
+          const existingFolder = folders.find(f => f.name.toLowerCase() === folderName.toLowerCase())
+          if (existingFolder) {
+            console.log('Found existing folder:', existingFolder) // Debug log
+            targetFolder = existingFolder
+          } else {
+            console.log('Creating new folder:', folderName) // Debug log
+            const newFolder = await createFolder(folderName)
+            if (newFolder) {
+              console.log('Created new folder:', newFolder) // Debug log
+              targetFolder = newFolder
+            }
+          }
+        }
+      }
+      
+      // Add the bookmark
+      const bookmarkData = {
+        url: bookmark.url,
+        title: bookmark.title,
+        description: bookmark.description,
+        image: bookmark.image,
+        folderId: targetFolder ? targetFolder.id : 
+                 (selectedFolderId !== 'root' && selectedFolderId !== 'inbox' ? selectedFolderId : null),
+        createdAt: new Date().toISOString()
+      }
+      
+      console.log('Adding bookmark with data:', bookmarkData) // Debug log
+      
+      await addDoc(collection(db, 'bookmarks'), bookmarkData)
+
       toast({
         title: "Bookmark added",
         status: "success",
         duration: 2000,
-        isClosable: true,
       })
     } catch (error) {
       console.error('Error adding bookmark:', error)
       toast({
         title: "Error adding bookmark",
+        description: error.message,
         status: "error",
         duration: 3000,
-        isClosable: true,
       })
     }
   }
@@ -278,29 +350,6 @@ function App() {
         status: "error",
         duration: 3000,
         isClosable: true,
-      })
-    }
-  }
-
-  const createFolder = async (name) => {
-    if (!name || typeof name !== 'string') return;
-    
-    try {
-      await addDoc(collection(db, 'folders'), {
-        name,
-        createdAt: new Date().toISOString()
-      })
-      toast({
-        title: "Folder created",
-        status: "success",
-        duration: 2000,
-      })
-    } catch (error) {
-      console.error('Error creating folder:', error)
-      toast({
-        title: "Error creating folder",
-        status: "error",
-        duration: 3000,
       })
     }
   }
@@ -485,11 +534,6 @@ function App() {
       
       await batch.commit()
       
-      // Navigate to inbox if the deleted folder was selected
-      if (selectedFolderId === folderId) {
-        navigate('/inbox')
-      }
-      
       toast({
         title: "Folder deleted",
         description: `${bookmarksToUpdate.length} bookmarks moved to inbox`,
@@ -508,70 +552,79 @@ function App() {
 
   return (
     <ChakraProvider theme={theme}>
-      <BrowserRouter>
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Container maxW="container.lg" py={8}>
-            <Routes>
-              <Route path="/" element={
-                <BookmarkManager
-                  bookmarks={bookmarks}
-                  folders={folders}
-                  selectedFolderId={selectedFolderId}
-                  setSelectedFolderId={setSelectedFolderId}
-                  filteredBookmarks={filteredBookmarks}
-                  isMovingBookmarks={isMovingBookmarks}
-                  setIsMovingBookmarks={setIsMovingBookmarks}
-                  createFolder={createFolder}
-                  addBookmark={addBookmark}
-                  deleteBookmark={deleteBookmark}
-                  handleBulkAction={handleBulkAction}
-                  moveBookmarksToFolder={moveBookmarksToFolder}
-                  editFolder={editFolder}
-                  deleteFolder={deleteFolder}
-                />
-              } />
-              <Route path="/inbox" element={
-                <BookmarkManager
-                  bookmarks={bookmarks}
-                  folders={folders}
-                  selectedFolderId={selectedFolderId}
-                  setSelectedFolderId={setSelectedFolderId}
-                  filteredBookmarks={filteredBookmarks}
-                  isMovingBookmarks={isMovingBookmarks}
-                  setIsMovingBookmarks={setIsMovingBookmarks}
-                  createFolder={createFolder}
-                  addBookmark={addBookmark}
-                  deleteBookmark={deleteBookmark}
-                  handleBulkAction={handleBulkAction}
-                  moveBookmarksToFolder={moveBookmarksToFolder}
-                  editFolder={editFolder}
-                  deleteFolder={deleteFolder}
-                />
-              } />
-              <Route path="/folder/:folderName" element={
-                <BookmarkManager
-                  bookmarks={bookmarks}
-                  folders={folders}
-                  selectedFolderId={selectedFolderId}
-                  setSelectedFolderId={setSelectedFolderId}
-                  filteredBookmarks={filteredBookmarks}
-                  isMovingBookmarks={isMovingBookmarks}
-                  setIsMovingBookmarks={setIsMovingBookmarks}
-                  createFolder={createFolder}
-                  addBookmark={addBookmark}
-                  deleteBookmark={deleteBookmark}
-                  handleBulkAction={handleBulkAction}
-                  moveBookmarksToFolder={moveBookmarksToFolder}
-                  editFolder={editFolder}
-                  deleteFolder={deleteFolder}
-                />
-              } />
-            </Routes>
-          </Container>
-        </DragDropContext>
-      </BrowserRouter>
+      <Box minH="100vh" bg="gray.50">
+        <Container maxW="container.xl" py={8}>
+          <BrowserRouter>
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Routes>
+                <Route path="/" element={
+                  <BookmarkManager
+                    bookmarks={bookmarks}
+                    folders={folders}
+                    selectedFolderId={selectedFolderId}
+                    setSelectedFolderId={setSelectedFolderId}
+                    filteredBookmarks={filteredBookmarks}
+                    isMovingBookmarks={isMovingBookmarks}
+                    setIsMovingBookmarks={setIsMovingBookmarks}
+                    createFolder={createFolder}
+                    addBookmark={addBookmark}
+                    deleteBookmark={deleteBookmark}
+                    handleBulkAction={handleBulkAction}
+                    moveBookmarksToFolder={moveBookmarksToFolder}
+                    editFolder={editFolder}
+                    deleteFolder={deleteFolder}
+                  />
+                } />
+                <Route path="/inbox" element={
+                  <BookmarkManager
+                    bookmarks={bookmarks}
+                    folders={folders}
+                    selectedFolderId={selectedFolderId}
+                    setSelectedFolderId={setSelectedFolderId}
+                    filteredBookmarks={filteredBookmarks}
+                    isMovingBookmarks={isMovingBookmarks}
+                    setIsMovingBookmarks={setIsMovingBookmarks}
+                    createFolder={createFolder}
+                    addBookmark={addBookmark}
+                    deleteBookmark={deleteBookmark}
+                    handleBulkAction={handleBulkAction}
+                    moveBookmarksToFolder={moveBookmarksToFolder}
+                    editFolder={editFolder}
+                    deleteFolder={deleteFolder}
+                  />
+                } />
+                <Route path="/folder/:folderName" element={
+                  <BookmarkManager
+                    bookmarks={bookmarks}
+                    folders={folders}
+                    selectedFolderId={selectedFolderId}
+                    setSelectedFolderId={setSelectedFolderId}
+                    filteredBookmarks={filteredBookmarks}
+                    isMovingBookmarks={isMovingBookmarks}
+                    setIsMovingBookmarks={setIsMovingBookmarks}
+                    createFolder={createFolder}
+                    addBookmark={addBookmark}
+                    deleteBookmark={deleteBookmark}
+                    handleBulkAction={handleBulkAction}
+                    moveBookmarksToFolder={moveBookmarksToFolder}
+                    editFolder={editFolder}
+                    deleteFolder={deleteFolder}
+                  />
+                } />
+                <Route path="*" element={
+                  <Box>
+                    <VStack spacing={8} align="stretch">
+                      <BookmarkForm onSubmit={addBookmark} folders={folders} />
+                    </VStack>
+                  </Box>
+                } />
+              </Routes>
+            </DragDropContext>
+          </BrowserRouter>
+        </Container>
+      </Box>
     </ChakraProvider>
   )
 }
 
-export default App 
+export default App

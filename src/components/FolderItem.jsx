@@ -56,6 +56,17 @@ function FolderItem({
     setIsEditing(false)
   }
 
+  const handleDelete = () => {
+    onDelete(folder.id)
+    onClose()
+  }
+
+  const handleFolderSelect = () => {
+    if (!isEditing) {
+      onSelect(folder.id)
+    }
+  }
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleSave()
@@ -108,7 +119,7 @@ function FolderItem({
                 leftIcon={<FiFolder />}
                 variant={isSelected ? "solid" : "ghost"}
                 justifyContent="flex-start"
-                onClick={() => onSelect(folder.id)}
+                onClick={handleFolderSelect}
                 w="full"
                 h="36px"
                 fontWeight="normal"
@@ -153,7 +164,7 @@ function FolderItem({
                     } : {})}
                   >
                     <MenuItem onClick={handleEdit}>Rename</MenuItem>
-                    <MenuItem onClick={() => onDelete(folder.id)} color="red.500">
+                    <MenuItem onClick={handleDelete} color="red.500">
                       Delete
                     </MenuItem>
                   </MenuList>
